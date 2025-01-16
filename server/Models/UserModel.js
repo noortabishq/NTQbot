@@ -1,28 +1,34 @@
 import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
+import bcrypt from "bcrypt";
 
 const userSchema = new mongoose.Schema({
     email: {
         type: String,
-        required: [true, "Your email address is required"],
+        required: [true, "Email is Required"],
         unique: true,
-    },
-    username: {
-        type: String,
-        required: [true, "Your username is required"],
     },
     password: {
         type: String,
-        required: [true, "Your password is required"],
-    },
-    createdAt: {
-        type: Date,
-        default: new Date(),
+        required: [true, "Password is Required"],
     },
 });
 
-userSchema.pre("save", async function () {
-    this.password = await bcrypt.hash(this.password, 12);
+userSchema.pre("save", async function (next) {
+    const salt = await bcrypt.genSalt();
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
 });
 
-export default mongoose.model("User", userSchema);
+userSchema.statics.login = async function (email, password) {
+    const user = await this.findOne({ email });
+    if (user) {
+        const auth = await bcrypt.compare(password, user.password);
+        if (auth) {
+            return user;
+        }
+        throw Error("incorrect password");
+    }
+    throw Error("incorrect email");
+};
+
+export default mongoose.model("Users", userSchema);

@@ -39,7 +39,7 @@ const Chatbot = ({ setShowChatbot }) => {
         };
 
         try {
-            const response = await fetch(import.meta.env.VITE_API_URL, requestOptions);
+            const response = await fetch(import.meta.env.VITE_GEMINI_URL, requestOptions);
             const data = await response.json();
             if (!response.ok) throw new Error(data?.error.message || "Something went wrong!");
 

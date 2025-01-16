@@ -1,18 +1,30 @@
 import User from "../Models/UserModel.js";
 import jwt from "jsonwebtoken";
 
-export const userVerification = (req, res) => {
-    const token = req.cookies.token;
-    if (!token) {
-        return res.json({ status: false });
+export const checkUser = (req, res, next) => {
+    const token = req.cookies.jwt;
+
+    if (token) {
+        jwt.verify(
+            token,
+            "NTQbot",
+            async (err, decodedToken) => {
+                if (err) {
+                    res.json({ status: false });
+                    next();
+                } else {
+                    const user = await User.findById(decodedToken.id);
+                    if (user) {
+                        res.json({ status: true, user: user.email });
+                    } else {
+                        res.json({ status: false });
+                    }
+                    next();
+                }
+            }
+        );
+    } else {
+        res.json({ status: false });
+        next();
     }
-    jwt.verify(token, process.env.TOKEN_KEY, async (err, data) => {
-        if (err) {
-            return res.json({ status: false });
-        } else {
-            const user = await User.findById(data.id);
-            if (user) return res.json({ status: true, user: user.username });
-            else return res.json({ status: false });
-        }
-    });
 };

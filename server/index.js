@@ -1,35 +1,43 @@
 import express from "express";
-import mongoose from "mongoose";
 import cors from "cors";
+import mongoose from "mongoose";
+import authRoutes from "./Routes/AuthRoute.js";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
-import authRoute from "./Routes/AuthRoute.js";
 
 dotenv.config();
-const { MONGO_URL, PORT, FRONTEND_URL } = process.env;
 
 const app = express();
 
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, (err) => {
+    if (err) {
+        console.log(err);
+    } else {
+        console.log(`Server started on port ${PORT}`);
+    }
+});
+
 mongoose
-    .connect(MONGO_URL, {
+    .connect(process.env.MONGO_URI, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
     })
-    .then(() => console.log("MongoDB is connected successfully"))
-    .catch((err) => console.error(err));
-
-app.listen(PORT, () => {
-    console.log(`Server is listening on port ${PORT}`);
-});
+    .then(() => {
+        console.log("DB Connection Successful");
+    })
+    .catch((err) => {
+        console.log(err.message);
+    });
 
 app.use(
     cors({
-        origin: FRONTEND_URL,
-        methods: ["GET", "POST", "PUT", "DELETE"],
+        origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+        methods: ["GET", "POST"],
         credentials: true,
     })
 );
 
 app.use(cookieParser());
 app.use(express.json());
-app.use("/", authRoute);
+app.use("/", authRoutes);

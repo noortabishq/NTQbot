@@ -1,88 +1,61 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useCookies } from "react-cookie";
 import { ToastContainer, toast } from "react-toastify";
 import video from '../assets/Auth.mp4';
+
 const APP_URL = import.meta.env.VITE_APP_URL;
 
 const Signup = () => {
+    const [cookies] = useCookies(["cookie-name"]);
     const navigate = useNavigate();
-    const [inputValue, setInputValue] = useState({
-        email: "",
-        password: "",
-        username: "",
-    });
-    const { email, password, username } = inputValue;
 
-    const handleOnChange = (e) => {
-        const { name, value } = e.target;
-        setInputValue({
-            ...inputValue,
-            [name]: value,
-        });
-    };
+    useEffect(() => {
+        if (cookies.jwt) {
+            navigate("/");
+        }
+    }, [cookies, navigate]);
 
-    const handleError = (err) =>
-        toast.error(err, {
-            position: "bottom-left",
-        });
-    const handleSuccess = (msg) =>
-        toast.success(msg, {
-            position: "bottom-right",
-        });
+    const [values, setValues] = useState({ email: "", password: "" });
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const generateError = (error) => toast.error(error, { position: "bottom-right" });
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
         try {
             const { data } = await axios.post(
                 `${APP_URL}/signup`,
-                {
-                    ...inputValue,
-                },
+                { ...values },
                 { withCredentials: true }
             );
-            const { success, message } = data;
-            if (success) {
-                handleSuccess(message);
-                setTimeout(() => {
+
+            if (data) {
+                if (data.errors) {
+                    const { email, password } = data.errors;
+                    if (email) generateError(email);
+                    else if (password) generateError(password);
+                } else {
                     navigate("/");
-                }, 1000);
-            } else {
-                handleError(message);
+                }
             }
-        } catch (error) {
-            console.log(error);
+        } catch (e) {
+            console.log(e);
         }
-        setInputValue({
-            ...inputValue,
-            email: "",
-            password: "",
-            username: "",
-        });
     };
 
     return (
         <div className="form_container">
-            <h2>Signup Account</h2>
+            <h2>Create An Account</h2>
             <form onSubmit={handleSubmit}>
                 <div>
                     <label htmlFor="email">Email</label>
                     <input
                         type="email"
                         name="email"
-                        value={email}
+                        value={values.email}
                         placeholder="Enter your email"
-                        onChange={handleOnChange}
-                    />
-                </div>
-                <div>
-                    <label htmlFor="username">Username</label>
-                    <input
-                        type="text"
-                        name="username"
-                        value={username}
-                        placeholder="Enter your username"
-                        onChange={handleOnChange}
+                        onChange={(e) => setValues({ ...values, email: e.target.value })}
                     />
                 </div>
                 <div>
@@ -90,14 +63,14 @@ const Signup = () => {
                     <input
                         type="password"
                         name="password"
-                        value={password}
+                        value={values.password}
                         placeholder="Enter your password"
-                        onChange={handleOnChange}
+                        onChange={(e) => setValues({ ...values, password: e.target.value })}
                     />
                 </div>
-                <button className="auth-button" type="submit">Submit</button>
+                <button className="auth-button" type="submit">Sign Up</button>
                 <span className="auth-span">
-                    Already have an account? <Link to={"/login"}>Login</Link>
+                    Already have an account? <Link to="/login">Login</Link>
                 </span>
             </form>
             <ToastContainer />

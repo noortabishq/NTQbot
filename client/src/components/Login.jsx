@@ -1,76 +1,64 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useCookies } from "react-cookie";
 import { ToastContainer, toast } from "react-toastify";
 import video from '../assets/Auth.mp4';
+
 const APP_URL = import.meta.env.VITE_APP_URL;
 
 const Login = () => {
+    const [cookies] = useCookies([]);
     const navigate = useNavigate();
-    const [inputValue, setInputValue] = useState({
-        email: "",
-        password: "",
-    });
-    const { email, password } = inputValue;
 
-    const handleOnChange = (e) => {
-        const { name, value } = e.target;
-        setInputValue({
-            ...inputValue,
-            [name]: value,
-        });
-    };
+    useEffect(() => {
+        if (cookies.jwt) {
+            navigate("/");
+        }
+    }, [cookies, navigate]);
 
-    const handleError = (err) =>
-        toast.error(err, {
-            position: "bottom-left",
-        });
-    const handleSuccess = (msg) =>
-        toast.success(msg, {
-            position: "bottom-left",
+    const [values, setValues] = useState({ email: "", password: "" });
+    const generateError = (error) =>
+        toast.error(error, {
+            position: "bottom-right",
         });
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (event) => {
+        event.preventDefault();
         try {
             const { data } = await axios.post(
                 `${APP_URL}/login`,
                 {
-                    ...inputValue,
+                    ...values,
                 },
                 { withCredentials: true }
             );
-            console.log(data);
-            const { success, message } = data;
-            if (success) {
-                handleSuccess(message);
-                setTimeout(() => {
-                    navigate("/", { replace: true });
-                }, 1000);
-            } else {
-                handleError(message);
+            if (data) {
+                if (data.errors) {
+                    const { email, password } = data.errors;
+                    if (email) generateError(email);
+                    else if (password) generateError(password);
+                } else {
+                    navigate("/");
+                }
             }
-        } catch (error) {
-            console.log(error);
+        } catch (e) {
+            console.log(e);
         }
-        setInputValue({
-            email: "",
-            password: "",
-        });
     };
 
     return (
         <div className="form_container">
             <h2>Login Account</h2>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={(e) => handleSubmit(e)}>
                 <div>
                     <label htmlFor="email">Email</label>
                     <input
                         type="email"
                         name="email"
-                        value={email}
+                        value={values.email}
                         placeholder="Enter your email"
-                        onChange={handleOnChange}
+                        onChange={(e) => setValues({ ...values, [e.target.name]: e.target.value })}
                     />
                 </div>
                 <div>
@@ -78,12 +66,12 @@ const Login = () => {
                     <input
                         type="password"
                         name="password"
-                        value={password}
+                        value={values.password}
                         placeholder="Enter your password"
-                        onChange={handleOnChange}
+                        onChange={(e) => setValues({ ...values, [e.target.name]: e.target.value })}
                     />
                 </div>
-                <button className="auth-button" type="submit">Submit</button>
+                <button className="auth-button" type="submit">Login</button>
                 <span className="auth-span">
                     Don't have an account? <Link to={"/signup"}>Signup</Link>
                 </span>
