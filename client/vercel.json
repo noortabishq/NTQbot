@@ -5,7 +5,15 @@
             "destination": "https://ntq.onrender.com/api/$1"
         },
         {
-            "source": "/(.*)",
+            "source": "/login",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/signup",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/",
             "destination": "/index.html"
         }
     ]
