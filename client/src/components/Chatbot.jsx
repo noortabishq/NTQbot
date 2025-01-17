@@ -5,12 +5,13 @@ import ChatMessage from "./ChatMessage";
 import { companyInfo } from "./CompanyInfo";
 import closeImg from "../assets/Close.png";
 import chatImg from "../assets/Chat.png";
-import deleteImg from "../assets/Delete.png"
+import deleteImg from "../assets/Delete.png";
+
+const APP_URL = import.meta.env.VITE_APP_URL;
 
 const Chatbot = ({ setShowChatbot }) => {
     const chatBodyRef = useRef();
     const [chatHistory, setChatHistory] = useState(() => {
-
         const savedChatHistory = localStorage.getItem('chatHistory');
         return savedChatHistory ? JSON.parse(savedChatHistory) : [
             {
@@ -21,7 +22,32 @@ const Chatbot = ({ setShowChatbot }) => {
         ];
     });
 
+    const [isResponseGenerating, setIsResponseGenerating] = useState(false);
+    const [apiKey, setApiKey] = useState(null);
+
+    useEffect(() => {
+        const fetchApiKey = async () => {
+            try {
+                const response = await fetch(`${APP_URL}/api/get-api-key`);
+                if (!response.ok) {
+                    throw new Error(`Server responded with status: ${response.status}`);
+                }
+                const data = await response.json();
+                setApiKey(data.apiKey);
+            } catch (error) {
+                console.error("Error fetching API key:", error);
+            }
+        };
+
+        fetchApiKey();
+    }, []);
+
     const generateBotResponse = async (history) => {
+        if (!apiKey) {
+            console.error("API Key not available");
+            return;
+        }
+
         const updateHistory = (text, isError = false) => {
             setChatHistory((prev) => {
                 const updatedHistory = [...prev.filter((msg) => msg.text !== "Thinking..."), { role: "model", text, isError }];
@@ -39,7 +65,7 @@ const Chatbot = ({ setShowChatbot }) => {
         };
 
         try {
-            const response = await fetch(import.meta.env.VITE_GEMINI_URL, requestOptions);
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`, requestOptions);
             const data = await response.json();
             if (!response.ok) throw new Error(data?.error.message || "Something went wrong!");
 
@@ -47,6 +73,8 @@ const Chatbot = ({ setShowChatbot }) => {
             updateHistory(apiResponseText);
         } catch (error) {
             updateHistory(error.message, true);
+        } finally {
+            setIsResponseGenerating(false);
         }
     };
 
@@ -100,7 +128,13 @@ const Chatbot = ({ setShowChatbot }) => {
                 </div>
 
                 <div className="chat-footer">
-                    <ChatForm chatHistory={chatHistory} setChatHistory={setChatHistory} generateBotResponse={generateBotResponse} />
+                    <ChatForm
+                        chatHistory={chatHistory}
+                        setChatHistory={setChatHistory}
+                        generateBotResponse={generateBotResponse}
+                        isResponseGenerating={isResponseGenerating}
+                        setIsResponseGenerating={setIsResponseGenerating}
+                    />
                 </div>
             </div>
         </div>

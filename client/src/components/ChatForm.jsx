@@ -1,20 +1,22 @@
 import { useRef } from "react";
 import myImage from '../assets/Send.png';
 
-const ChatForm = ({ chatHistory, setChatHistory, generateBotResponse }) => {
+const ChatForm = ({ chatHistory, setChatHistory, generateBotResponse, isResponseGenerating, setIsResponseGenerating }) => {
     const inputRef = useRef();
 
     const handleFormSubmit = (e) => {
         e.preventDefault();
         const userMessage = inputRef.current.value.trim();
-        if (!userMessage) return;
+        if (!userMessage || isResponseGenerating) return;
+
+        setIsResponseGenerating(true);
         inputRef.current.value = "";
 
         setChatHistory((history) => [...history, { role: "user", text: userMessage }]);
 
         setTimeout(() => {
             setChatHistory((history) => [...history, { role: "model", text: "Thinking..." }]);
-            generateBotResponse([...chatHistory, { role: "user", text: `Using the details provided above, please address this query: ${userMessage}` }]);
+            generateBotResponse([...chatHistory, { role: "user", text: userMessage }]);
         }, 600);
     };
 

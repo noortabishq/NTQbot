@@ -10,6 +10,7 @@ dotenv.config();
 const app = express();
 
 const PORT = process.env.PORT || 4000;
+
 app.listen(PORT, (err) => {
     if (err) {
         console.log(err);
@@ -40,4 +41,9 @@ app.use(
 
 app.use(cookieParser());
 app.use(express.json());
+
+app.get("/api/get-api-key", (req, res) => {
+    res.json({ apiKey: process.env.VITE_API_KEY });
+});
+
 app.use("/", authRoutes);
