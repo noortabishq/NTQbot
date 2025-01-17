@@ -1,20 +1,18 @@
 {
-    "rewrites": [
+    "version": 2,
+    "builds": [
         {
-            "source": "/api/(.*)",
-            "destination": "https://ntq.onrender.com/api/$1"
-        },
+            "src": "vite.config.ts",
+            "use": "@vercel/static-build",
+            "config": {
+                "distDir": "dist"
+            }
+        }
+    ],
+    "routes": [
         {
-            "source": "/login",
-            "destination": "/index.html"
-        },
-        {
-            "source": "/signup",
-            "destination": "/index.html"
-        },
-        {
-            "source": "/",
-            "destination": "/index.html"
+            "src": "/(.*)",
+            "dest": "/dist/index.html"
         }
     ]
 }
