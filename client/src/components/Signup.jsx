@@ -1,61 +1,96 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { useCookies } from "react-cookie";
 import { ToastContainer, toast } from "react-toastify";
 import video from '../assets/Auth.mp4';
 
 const APP_URL = import.meta.env.VITE_APP_URL;
 
 const Signup = () => {
-    const [cookies] = useCookies(["cookie-name"]);
+
+    const [signupInfo, setSignupInfo] = useState({
+        name: '',
+        email: '',
+        password: ''
+    })
+
     const navigate = useNavigate();
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        const copySignupInfo = { ...signupInfo };
+        copySignupInfo[name] = value;
+        setSignupInfo(copySignupInfo);
+    }
 
-    useEffect(() => {
-        if (cookies.jwt) {
-            navigate("/");
+    const handleError = (message) => {
+        toast.error(message, {
+            position: "top-right",
+            theme: "dark"
+        });
+    }
+
+    const handleSuccess = (message) => {
+        toast.success(message, {
+            position: "top-right",
+            theme: "dark"
+        });
+    }
+
+    const handleSignup = async (e) => {
+        e.preventDefault();
+        const { name, email, password } = signupInfo;
+        if (!name || !email || !password) {
+            return handleError('name, email and password are required')
         }
-    }, [cookies, navigate]);
-
-    const [values, setValues] = useState({ email: "", password: "" });
-
-    const generateError = (error) => toast.error(error, { position: "bottom-right" });
-
-    const handleSubmit = async (event) => {
-        event.preventDefault();
         try {
-            const { data } = await axios.post(
-                `${APP_URL}/signup`,
-                { ...values },
-                { withCredentials: true }
-            );
-
-            if (data) {
-                if (data.errors) {
-                    const { email, password } = data.errors;
-                    if (email) generateError(email);
-                    else if (password) generateError(password);
-                } else {
-                    navigate("/");
-                }
+            const url = `${APP_URL}/auth/signup`;
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(signupInfo)
+            });
+            const result = await response.json();
+            const { success, message, error } = result;
+            if (success) {
+                handleSuccess(message);
+                setTimeout(() => {
+                    navigate('/login')
+                }, 1000)
+            } else if (error) {
+                const details = error?.details[0].message;
+                handleError(details);
+            } else if (!success) {
+                handleError(message);
             }
-        } catch (e) {
-            console.log(e);
+        } catch (err) {
+            handleError(err);
         }
-    };
+    }
 
     return (
         <div className="form_container">
             <h2>Create An Account</h2>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSignup}>
+                <div>
+                    <label htmlFor='name'>Username</label>
+                    <input
+                        onChange={handleChange}
+                        type='text'
+                        name='name'
+                        autoFocus
+                        placeholder='Enter your username'
+                        value={signupInfo.name}
+                    />
+                </div>
                 <div>
                     <label htmlFor="email">Email</label>
                     <input
                         type="email"
                         name="email"
-                        value={values.email}
+                        value={signupInfo.email}
                         placeholder="Enter your email"
-                        onChange={(e) => setValues({ ...values, email: e.target.value })}
+                        onChange={handleChange}
                     />
                 </div>
                 <div>
@@ -63,9 +98,9 @@ const Signup = () => {
                     <input
                         type="password"
                         name="password"
-                        value={values.password}
+                        value={signupInfo.password}
                         placeholder="Enter your password"
-                        onChange={(e) => setValues({ ...values, password: e.target.value })}
+                        onChange={handleChange}
                     />
                 </div>
                 <button className="auth-button" type="submit">Sign Up</button>

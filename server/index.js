@@ -1,49 +1,29 @@
-import express from "express";
-import cors from "cors";
-import mongoose from "mongoose";
-import authRoutes from "./Routes/AuthRoute.js";
-import cookieParser from "cookie-parser";
-import dotenv from "dotenv";
+import express from 'express';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import AuthRouter from './Routes/AuthRoute.js';
+import HomeRouter from './Routes/HomeRoute.js';
+import dotenv from 'dotenv';
+import './Config/DB.js';
 
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 8080;
 
-const PORT = process.env.PORT || 4000;
-
-app.listen(PORT, (err) => {
-    if (err) {
-        console.log(err);
-    } else {
-        console.log(`Server started on port ${PORT}`);
-    }
+app.get('/ping', (req, res) => {
+    res.send('PONG');
 });
 
-mongoose
-    .connect(process.env.MONGO_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    })
-    .then(() => {
-        console.log("DB Connection Successful");
-    })
-    .catch((err) => {
-        console.log(err.message);
-    });
-
-app.use(
-    cors({
-        origin: process.env.CORS_ORIGIN || "http://localhost:5173",
-        methods: ["GET", "POST"],
-        credentials: true,
-    })
-);
-
-app.use(cookieParser());
-app.use(express.json());
+app.use(bodyParser.json());
+app.use(cors());
+app.use('/auth', AuthRouter);
+app.use('/home', HomeRouter);
 
 app.get("/api/get-api-key", (req, res) => {
-    res.json({ apiKey: process.env.VITE_API_KEY });
+    res.json({ apiKey: process.env.API_KEY });
 });
 
-app.use("/", authRoutes);
+app.listen(PORT, () => {
+    console.log(`Server is running on ${PORT}`);
+});
