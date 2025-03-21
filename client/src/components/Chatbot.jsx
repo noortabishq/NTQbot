@@ -65,7 +65,7 @@ const Chatbot = ({ setShowChatbot }) => {
         };
 
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`, requestOptions);
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, requestOptions);
             const data = await response.json();
             if (!response.ok) throw new Error(data?.error.message || "Something went wrong!");
 
