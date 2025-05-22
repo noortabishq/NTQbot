@@ -23,31 +23,8 @@ const Chatbot = ({ setShowChatbot }) => {
     });
 
     const [isResponseGenerating, setIsResponseGenerating] = useState(false);
-    const [apiKey, setApiKey] = useState(null);
-
-    useEffect(() => {
-        const fetchApiKey = async () => {
-            try {
-                const response = await fetch(`${APP_URL}/api/get-api-key`);
-                if (!response.ok) {
-                    throw new Error(`Server responded with status: ${response.status}`);
-                }
-                const data = await response.json();
-                setApiKey(data.apiKey);
-            } catch (error) {
-                console.error("Error fetching API key:", error);
-            }
-        };
-
-        fetchApiKey();
-    }, []);
 
     const generateBotResponse = async (history) => {
-        if (!apiKey) {
-            console.error("API Key not available");
-            return;
-        }
-
         const updateHistory = (text, isError = false) => {
             setChatHistory((prev) => {
                 const updatedHistory = [...prev.filter((msg) => msg.text !== "Thinking..."), { role: "model", text, isError }];
@@ -56,21 +33,17 @@ const Chatbot = ({ setShowChatbot }) => {
             });
         };
 
-        history = history.map(({ role, text }) => ({ role, parts: [{ text }] }));
-
         const requestOptions = {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ contents: history }),
+            body: JSON.stringify({ history })
         };
 
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, requestOptions);
+            const response = await fetch(`${APP_URL}/api/chat`, requestOptions);
             const data = await response.json();
-            if (!response.ok) throw new Error(data?.error.message || "Something went wrong!");
-
-            const apiResponseText = data.candidates[0].content.parts[0].text.replace(/\\(.?)\\*/g, "$1").trim();
-            updateHistory(apiResponseText);
+            if (!response.ok) throw new Error(data?.error || "Something went wrong!");
+            updateHistory(data.text);
         } catch (error) {
             updateHistory(error.message, true);
         } finally {

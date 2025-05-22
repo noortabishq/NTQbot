@@ -10,10 +10,7 @@ if (!mongo_url) {
     process.exit(1);
 }
 
-mongoose.connect(mongo_url, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
+mongoose.connect(mongo_url)
     .then(() => {
         console.log('MongoDB Connected...');
     })
